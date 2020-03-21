@@ -50,12 +50,16 @@ chat = 'Public or Private Channel ID'
 ![](https://i.imgur.com/JAuzXxM.png)
 
 ![](https://i.imgur.com/97ASDjD.png)
+
 2. Create Telegram **Channel** (*Public* or *Private*)
+
 3. Get **CHAT**
     If **Public** : String Name without *@*
     If **Private** : Negative Integer. Guide on [StackOverflow](https://stackoverflow.com/questions/33858927/how-to-obtain-the-chat-id-of-a-private-telegram-channel)
+
 4. Replace Value in **Code**
 	Open *telebase.py* and replace value.
+
 5. Now you can **use your database**
 
 ---
