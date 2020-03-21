@@ -33,7 +33,7 @@ api_hash = 'API_HASH_HERE'
 chat = 'Public or Private Channel ID'
 ~~~
 
-1. Get ***\*API_ID\**** (int) and ***\*API_HASH\**** (str) by this [telegram link](https://my.telegram.org/auth)
+1. Get **API_ID** (int) and **API_HASH** (str) by this [telegram link](https://my.telegram.org/auth)
 
 
 
@@ -43,32 +43,32 @@ chat = 'Public or Private Channel ID'
 
 ![](https://i.imgur.com/97ASDjD.png)
 
-2. Create Telegram ***\*Channel\**** (**Public** or **Private**)
+2. Create Telegram **Channel** (*Public* or *Private*)
 
-3. Get ***\*CHAT\****
+3. Get **CHAT**
 
-   If ***\*Public\**** : String Name without **@**
+   If ***Public*** : String Name without *@*
 
-   If ***\*Private\**** : Negative Integer. Guide on [StackOverflow](https://stackoverflow.com/questions/33858927/how-to-obtain-the-chat-id-of-a-private-telegram-channel)
+   If ***Private*** : Negative Integer. Guide on [StackOverflow](https://stackoverflow.com/questions/33858927/how-to-obtain-the-chat-id-of-a-private-telegram-channel)
 
-4. Replace Value in ***\*Code\****
+4. Replace Value in **Code**
 
      Open **telebase.py** and replace value.
 
-5. Now you can ***\*use your database\****
+5. Now you can **use your database**
 
 ## :green_book: Features
 
-\- :pushpin: Cloud based database (**Single file less than 1.5GB** ***\*****Telegram Limitation*****\***)
+- :pushpin: Cloud based database (**Single file less than 1.5GB** ***Telegram Limitation***)
 
-\- :pushpin: GUI Client
+- :pushpin: GUI Client
 
-\- :pushpin: Download File by GUI App
+- :pushpin: Download File by GUI App
 
 
 
 ## :closed_book: To Dos
 
-\- :pushpin: Delete something from database
+- :pushpin: Delete something from database
 
-\- :pushpin: Improve GUI App
+- :pushpin: Improve GUI App
