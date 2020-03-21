@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter.ttk import Treeview
+from PIL import ImageTk, Image
 
 import sqlite3
 
@@ -10,7 +11,7 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 
-#Initializing Telegram Client
+# Initializing Telegram Client
 api_id = API_ID_HERE
 api_hash = 'API_HASH_HERE'
 chat = 'Public or Private Channel ID'
@@ -18,7 +19,7 @@ chat = 'Public or Private Channel ID'
 app = Client('UserName', api_id, api_hash)
 app.start()
 
-#Initializing Database Connection and Cursor
+# Initializing Database Connection and Cursor
 
 if os.path.exists('.\\references.db'):  # Checking if database already exists...
     conn = sqlite3.connect('references.db')
@@ -35,18 +36,19 @@ else:                                   # Or not.
     """)
     conn.commit()
 
-#User Visualization
+
+# User Visualization
 def select_files():
-    root.filenames = filedialog.askopenfilenames(initialdir='./' ,
+    root.filenames = filedialog.askopenfilenames(initialdir='./',
                                                  title='Select Files',
                                                  filetype=(('All Files', '*.*'),))
-    #File Uploading
+    #  File Uploading
     for nfile in tqdm(range(0, len(root.filenames)), ncols=70):
         try:
             file = root.filenames[nfile]
             msg = app.send_document(chat, file)
 
-            #Referencing in Database
+            # Referencing in Database
             c.execute("""INSERT INTO files VALUES(:name, :id, :time);""",
             {
                 'name': file.split('/')[-1],
@@ -57,6 +59,7 @@ def select_files():
 
         except ValueError:
             Label(root, text='File {} is larger than 1.5GB'.format(file)).pack()
+
 
 def download(tree):
     """
@@ -70,7 +73,7 @@ def download(tree):
 
 def show_files():
 
-    show = ShowWindow(c, app, chat)
+    show = ShowWindow(app, chat)
     """
     show = Tk()
     show.title('Showing')
@@ -123,17 +126,21 @@ def show_files():
 
     show.mainloop()"""
 
+
 class ShowWindow(Tk):
 
-    def __init__(self, cursor, telegram_app, chat_id):
+    def __init__(self, telegram_app, chat_id):
         Tk.__init__(self)
 
-        self.c = cursor
+        self.conn = sqlite3.connect('references.db')
+        self.c = self.conn.cursor()
+
         self.app = telegram_app
         self.chat_id = chat_id
 
         self.title('Showing')
         self.geometry('550x300')
+        self.iconbitmap('.\\gui\\icon\\telebase.ico')
 
         Label(self, text='Double Click A Item to Download It').pack()
         Label(self, text='MultiSelect Items and Press Button to Download It').pack()
@@ -151,18 +158,45 @@ class ShowWindow(Tk):
         self.treeview.heading('two', text='Upload Date')
         self.treeview.pack()
 
+        self.update_tree()
+
+        self.treeview.bind('<Double-Button-1>', self.download)
+        Button(self, text='Download It', command=self.multi_download, padx=20).pack(side=LEFT)
+
+        Button(self, text='Delete Selected', command=self.delete, padx=20).pack(side=RIGHT)
+
+        self.mainloop()
+        self.conn.close()
+
+    def delete(self):
+        selected = self.treeview.selection()
+        for identifier in selected:
+            item = self.treeview.item(identifier)
+            telegram_id = int(item['text'])
+            self.app.delete_messages(self.chat_id, telegram_id)
+
+            self.c.execute("""
+                DELETE FROM files
+                WHERE Tid = :id
+            """, {'id': telegram_id})
+
+            self.conn.commit()
+        self.update_tree()
+
+    def update_tree(self):
+
+        for child in self.treeview.get_children():
+            self.treeview.delete(child)
+
         self.c.execute("""
-            SELECT * FROM files;
-        """)
+                    SELECT * FROM files;
+                """)
+
+        self.conn.commit()
 
         for row in self.c.fetchall():
             self.treeview.insert('', 0, text=row[1], values=(row[0], row[2]))
 
-        self.treeview.bind('<Double-Button-1>', self.download)
-        Button(self, text='Download It', command=self.multi_download).pack()
-
-        self.mainloop()
-    
     def download(self, event):
         item = self.treeview.item(self.treeview.selection())
         self.app.download_media(self.app.get_messages(self.chat_id, int(item['text'])))
@@ -172,17 +206,46 @@ class ShowWindow(Tk):
         for identifier in selected:
             
             item = self.treeview.item(identifier)
-            self.app.download_media(self.app.get_messages(self.chat_id, int(item['text'])))
+            self.app.download_media(self.app.get_messages(self.chat_id, int(item['text'])))   
+
+
+def button_hover(event, button):
+    if button == 'uploadButton':
+        uploadButton.configure(image=up_hover_image)
+    elif button == 'downloadButton':
+        downloadButton.configure(image=do_hover_image)
+
+
+def button_leave(event, button):
+    if button == 'uploadButton':
+        uploadButton.configure(image=up_leave_image)
+    elif button == 'downloadButton':
+        downloadButton.configure(image=do_leave_image)
+
 
 root = Tk()
-root.geometry('300x200')
-root.title('Upload File on Telegram')
+root.geometry('280x110')
+root.title('TeleBase')
+root.iconbitmap('.\\gui\\icon\\telebase.ico')
 
-Label(root, text='Select Files to Upload', font=('Roboto', 16)).pack()
-Label(root, text='Single file have to be less than 1.5GB', font=('Roboto', 8), pady=10).pack()
+Label(root, text='Single file have to be less than 1.5GB', font=('Roboto', 10), pady=10).grid(column=0, row=0, columnspan=2)
 
-Button(root, text='Upload Files', command=select_files, font=('Roboto', 8), height=2, width=30).pack()
-Button(root, text='Download Files', command=show_files, font=('Roboto', 8), height=2, width=30).pack()
+up_leave_image = ImageTk.PhotoImage(file='.\\gui\\button\\upload_button.png')
+up_hover_image = ImageTk.PhotoImage(file='.\\gui\\button\\upload_button_pressed.png')
+
+uploadButton = Button(root, command=select_files, height=50, width=120, image=up_leave_image, bd=0)
+uploadButton.grid(column=0, row=1, padx=10)
+uploadButton.bind('<Enter>', lambda event: button_hover(event, button='uploadButton'))
+uploadButton.bind('<Leave>', lambda event: button_leave(event, button='uploadButton'))
+
+do_leave_image = ImageTk.PhotoImage(file='.\\gui\\button\\download_button.png')
+do_hover_image = ImageTk.PhotoImage(file='.\\gui\\button\\download_button_pressed.png')
+
+downloadButton = Button(root, command=show_files, height=50, width=120, image=do_leave_image, bd=0)
+downloadButton.grid(column=1, row=1)
+downloadButton.bind('<Enter>', lambda event: button_hover(event, button='downloadButton'))
+downloadButton.bind('<Leave>', lambda event: button_leave(event, button='downloadButton'))
+
 
 root.mainloop()
 conn.commit()

@@ -60,15 +60,12 @@ chat = 'Public or Private Channel ID'
 ## :green_book: Features
 
 - :pushpin: Cloud based database (**Single file less than 1.5GB** ***Telegram Limitation***)
-
 - :pushpin: GUI Client
-
 - :pushpin: Download File by GUI App
+- :pushpin: Delete Functionality (Delete File or Files from Database)
 
 
 
 ## :closed_book: To Dos
-
-- :pushpin: Delete something from database
 
 - :pushpin: Improve GUI App
