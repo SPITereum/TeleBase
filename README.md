@@ -75,3 +75,4 @@ chat = 'Public or Private Channel ID'
 - :pushpin: Permit to Upload File over 1.5 GB, by **splitting** them
 - :pushpin: Add Folder Separation
 - :pushpin: Add Status Bar, for Upload Progress and Download Progress
+- :pushpin: Add Telegram Reference Link
