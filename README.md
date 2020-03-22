@@ -63,8 +63,7 @@ chat = 'Public or Private Channel ID'
 - :pushpin: GUI Client
 - :pushpin: Download File by GUI App
 - :pushpin: Delete Functionality (Delete File or Files from Database)
-
-
+- :pushpin: Added a Progress Bar for Downloading Files
 
 ## :closed_book: To Dos
 
@@ -74,5 +73,5 @@ chat = 'Public or Private Channel ID'
 - :pushpin: Add File Type n Showing Window
 - :pushpin: Permit to Upload File over 1.5 GB, by **splitting** them
 - :pushpin: Add Folder Separation
-- :pushpin: Add Status Bar, for Upload Progress and Download Progress
+- :pushpin: Add Progress Bar for Uploading Process
 - :pushpin: Add Telegram Reference Link
