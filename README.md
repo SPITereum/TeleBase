@@ -10,7 +10,7 @@ Module View
 
 \- [pyrogram](https://docs.pyrogram.org/) `$ pip3 install pyrogram` : MTProto Services to interface as user in Telegram
 
-\- [tgcrypto](https://github.com/pyrogram/tgcrypto) `$ pip3 install tgcrypto` : [For Windows User], module needed for ***\*pyrogram\****
+\- [tgcrypto](https://github.com/pyrogram/tgcrypto) `$ pip3 install tgcrypto` : [For Windows User], module needed for ***pyrogram***
 
 ### Preinstalled Module
 
@@ -69,3 +69,9 @@ chat = 'Public or Private Channel ID'
 ## :closed_book: To Dos
 
 - :pushpin: Improve GUI App
+- :pushpin: Improve Showing Window Interface
+- :pushpin: Add File Length in Showing Window
+- :pushpin: Add File Type n Showing Window
+- :pushpin: Permit to Upload File over 1.5 GB, by **splitting** them
+- :pushpin: Add Folder Separation
+- :pushpin: Add Status Bar, for Upload Progress and Download Progress
