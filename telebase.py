@@ -40,13 +40,16 @@ else:                                   # Or not.
 
 
 class MainWindow(Tk):
-    def __init__(self):
+    def __init__(self, telegram_app, chat_id):
         super().__init__()
 
-        self.geometry('280x110')
+        self.geometry('280x120')
         self.title('TeleBase')
         self.iconbitmap('.\\gui\\icon\\telebase.ico')
-        self.filenames = None
+        self.items = None
+
+        self.app = telegram_app
+        self.chat = chat_id
 
         Label(self, text='Single file have to be less than 1.5GB', font=('Roboto', 10), pady=10).grid(column=0, row=0,
                                                                                                       columnspan=2)
@@ -67,6 +70,10 @@ class MainWindow(Tk):
         self.downloadButton.bind('<Enter>', lambda event: self.button_hover(event, button='downloadButton'))
         self.downloadButton.bind('<Leave>', lambda event: self.button_leave(event, button='downloadButton'))
 
+        self.upload_bar = Progressbar(self, orient=HORIZONTAL, length=120, mode='determinate')
+        self.upload_bar.grid(column=0, row=2, pady=3)
+        self.upload_bar['maximum'] = 100
+
         self.mainloop()
 
     def button_hover(self, event, button):
@@ -83,30 +90,52 @@ class MainWindow(Tk):
 
     # User Visualization
     def select_files(self):
-        self.filenames = filedialog.askopenfilenames(initialdir='./',
-                                                     title='Select Files',
-                                                     filetype=(('All Files', '*.*'),))
-        #  File Uploading
-        file = ''
-        for nfile in tqdm(range(0, len(self.filenames)), ncols=70):
-            try:
-                file = self.filenames[nfile]
-                msg = app.send_document(chat, file)
-
-                # Referencing in Database
-                c.execute("""INSERT INTO files VALUES(:name, :id, :time);""",
-                          {
-                              'name': file.split('/')[-1],
-                              'id': int(msg['message_id']),
-                              'time': datetime.now()
-                          })
-                conn.commit()
-
-            except ValueError:
-                Label(self, text='File {} is larger than 1.5GB'.format(file)).pack()
+        self.items = filedialog.askopenfilenames(initialdir='./',
+                                                 title='Select Files',
+                                                 filetype=(('All Files', '*.*'),))
+        # File Uploading
+        uploader = UploadThread(self, self.app, self.chat, self.items)
+        uploader.start()
 
     def show_files(self):
         show = ShowWindow(app, chat)
+
+
+class UploadThread(Thread):
+    def __init__(self, main_frame, client, chat_id, to_upload):
+        super().__init__()
+
+        self.main_frame = main_frame
+        self.app = client
+        self.chat_id = chat_id
+        self.files = to_upload
+
+        self.conn = None
+        self.c = None
+
+    def progress(self, current, total):
+        self.main_frame.upload_bar['value'] = int(current * 100 / total)
+
+    def run(self):
+
+        self.conn = sqlite3.connect('references.db')
+        self.c = self.conn.cursor()
+
+        for file in self.files:
+            msg = app.send_document(self.chat_id, file, progress=self.progress)
+
+            # Referencing in Database
+            self.c.execute("""INSERT INTO files VALUES(:name, :id, :time);""",
+                           {
+                               'name': file.split('/')[-1],
+                               'id': int(msg['message_id']),
+                               'time': datetime.now()
+                            })
+            self.conn.commit()
+
+        self.main_frame.upload_bar['value'] = 0
+
+        self.conn.close()
 
 
 class ShowWindow(Tk):
@@ -123,6 +152,7 @@ class ShowWindow(Tk):
 
         Label(self, text='Double Click A Item to Download It').pack()
         Label(self, text='MultiSelect Items and Press Button to Download It').pack()
+        Button(self, text='Refresh List', command=self.refresh_tree).pack()
 
         self.treeview = Treeview(self)
         self.treeview['columns'] = ('one', 'two')
@@ -136,7 +166,7 @@ class ShowWindow(Tk):
         self.treeview.heading('two', text='Upload Date')
         self.treeview.pack()
 
-        self.update_tree()
+        self.refresh_tree()
 
         self.treeview.bind('<Double-Button-1>', self.download)
         Button(self, text='Download It', command=self.multi_download, padx=20).pack(side=LEFT)
@@ -164,9 +194,9 @@ class ShowWindow(Tk):
 
             conn.commit()
 
-        self.update_tree()
+        self.refresh_tree()
 
-    def update_tree(self):
+    def refresh_tree(self):
 
         for child in self.treeview.get_children():
             self.treeview.delete(child)
@@ -202,13 +232,13 @@ class ShowWindow(Tk):
 
 
 class DownloaderThread(Thread):
-    def __init__(self, showing_frame, client, chat_id, to_upload):
+    def __init__(self, showing_frame, client, chat_id, to_download):
         super().__init__()
 
         self.show_frame = showing_frame
         self.app = client
         self.chat_id = chat_id
-        self.files = to_upload
+        self.files = to_download
 
     def progress(self, current, total):
         self.show_frame.download_bar['value'] = int(current * 100 / total)
@@ -220,7 +250,7 @@ class DownloaderThread(Thread):
         self.show_frame.download_bar['value'] = 0
 
 
-root = MainWindow()
+root = MainWindow(app, chat)
 conn.close()
 app.stop()
 
