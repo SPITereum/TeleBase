@@ -64,14 +64,16 @@ chat = 'Public or Private Channel ID'
 - :pushpin: Download File by GUI App
 - :pushpin: Delete Functionality (Delete File or Files from Database)
 - :pushpin: Added a Raw Progress Bar for Downloading and Uploading Files
+- :pushpin: Added Telegram Reference Link. It can be open by Showing Menu, with Right Click on File or It can be copied in the Windows Clipboard
+- :pushpin: Added Show Info in Menu Popup (it can be open by Showing Menu, with Right Click on File)
+- :pushpin: File Status : Added a Counter of File Uploaded or Download; Added how much byte you uploaded or downloaded
+- :pushpin: Added File Size on Showing Panel
+- :pushpin: Added File Type on Database, it can showed by clicking on a file with right mouse
 
 ## :closed_book: To Dos
 
 - :pushpin: Improve GUI App
 - :pushpin: Improve Showing Window Interface
-- :pushpin: Add File Length in Showing Window
-- :pushpin: Add File Type n Showing Window
+- :pushpin: Add a Option Panel
 - :pushpin: Permit to Upload File over 1.5 GB, by **splitting** them
 - :pushpin: Add Folder Separation
-- :pushpin: Improve Progress Bars
-- :pushpin: Add Telegram Reference Link
