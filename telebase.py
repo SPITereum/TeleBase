@@ -39,14 +39,29 @@ else:                                   # Or not.
     c = conn.cursor()
     c.execute("""
         CREATE TABLE files (
-        FileName TEXT,
-        TelegramID INTEGER PRIMARY KEY,
-        UploadTime TEXT,
-        TelegramLink TEXT,
-        FileDimension TEXT,
-        FileType TEXT
+            FileName TEXT,
+            TelegramID INTEGER PRIMARY KEY,
+            UploadTime TEXT,
+            TelegramLink TEXT,
+            FileDimension TEXT,
+            FileType TEXT,
+            FolderID INTEGER,
+            FOREIGN KEY(FolderID) REFERENCES folders(FolderID)
         );
     """)
+
+    conn.commit()
+
+    c.execute("""
+        CREATE TABLE folders (
+            FolderID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FolderName TEXT NOT NULL,
+            SubFolderID INTEGER,
+            
+            FOREIGN KEY(SubFolderID) REFERENCES folders(FolderID)
+        );
+    """)
+
     conn.commit()
 
 
@@ -170,7 +185,8 @@ class UploadThread(Thread):
 
             # Referencing in Database
             try:
-                self.c.execute("""INSERT INTO files VALUES(:name, :id, :time, :link, :file_dim, :file_type);""",
+                self.c.execute("""INSERT INTO files(FileName, TelegramID, UploadTime, TelegramLink, FileDimension, FileType)
+                                    VALUES(:name, :id, :time, :link, :file_dim, :file_type);""",
                                {
                                    'name': file.split('/')[-1],
                                    'id': int(msg['message_id']),
@@ -182,7 +198,8 @@ class UploadThread(Thread):
                 self.conn.commit()
             except TypeError:
                 if msg['audio']:
-                    self.c.execute("""INSERT INTO files VALUES(:name, :id, :time, :link, :file_dim, :file_type);""",
+                    self.c.execute("""INSERT INTO files(FileName, TelegramID, UploadTime, TelegramLink, FileDimension, FileType)
+                                        VALUES(:name, :id, :time, :link, :file_dim, :file_type);""",
                                    {
                                        'name': file.split('/')[-1],
                                        'id': int(msg['message_id']),
@@ -262,19 +279,167 @@ class ShowWindow(Tk):
         self.status_do_byte.grid(row=5, column=0, columnspan=2)
 
         self.item = None
+        self.popup_event = None
+
+        self.entry_folder_name = None
+        self.folder_creator = None
+        self.subfolder_panel = None
+        self.list_folder = None
+
+        self.list_folder_box = None
+        self.folders = None
+
+        self.folder_panel = Menu(self, tearoff=0)
+        self.folder_panel.add_command(label='New Folder', command=self.new_folder_menu)
+        self.folder_panel.add_command(label='Move File into Folder', command=self.move_file)
+
+        self.folder_panel_limited = Menu(self, tearoff=0)
+        self.folder_panel_limited.add_command(label='New Folder', command=self.new_folder_menu)
+        self.folder_panel_limited.add_command(label='Delete Folder', command=self.delete_folder)
 
         self.popup_dx = Menu(self, tearoff=0)
         self.popup_dx.add_command(label='Copy Telegram Link', command=self.copy_telegram_link)
         self.popup_dx.add_command(label='Open Telegram Link', command=self.open_telegram_link)
         self.popup_dx.add_command(label='Show More Info', command=self.show_info)
+        self.popup_dx.add_separator()
+        self.popup_dx.add_command(label='Delete File', command=self.delete)
+        self.popup_dx.add_separator()
+        self.popup_dx.add_cascade(label='Folder Option', menu=self.folder_panel)
+
+        self.popup_limited = Menu(self, tearoff=0)
+        self.popup_limited.add_cascade(label='Folder Option', menu=self.folder_panel_limited)
 
         self.mainloop()
         conn.close()
 
+    def delete_folder(self):
+        self.item = self.treeview.identify_row(self.popup_event.y)  # Get Item from Treeview
+        folder_id = self.treeview.identify_row(self.popup_event.y)
+
+        c.execute("""
+            DELETE FROM folders
+                WHERE FolderID = :id;
+        """, {
+            'id': folder_id
+        })
+
+        conn.commit()
+        self.refresh_tree()
+
+    def alter_file_folder(self):
+        folder_alter = self.folders[self.list_folder_box.curselection()[0]][0]
+        id_alter = self.treeview.item(self.treeview.identify_row(self.popup_event.y))['text']
+        print(folder_alter, id_alter)
+
+        c.execute("""
+            UPDATE files
+                SET FolderID = :folder
+                WHERE TelegramID = :id;
+        """, {
+            'folder': folder_alter,
+            'id': id_alter
+        })
+
+        self.refresh_tree()
+
+    def move_file(self):
+
+        folder_choose = Tk()
+        folder_choose.title('Choose a Folder')
+        folder_choose.geometry('400x200')
+        folder_choose.iconbitmap('.\\gui\\icon\\telebase.ico')
+
+        Label(folder_choose, text='Choose Folder Where Move File').pack()
+
+        c.execute("""
+            SELECT * FROM folders;
+        """)
+        conn.commit()
+
+        self.folders = c.fetchall()
+        if self.folders:
+
+            self.list_folder_box = Listbox(folder_choose)
+            self.list_folder_box.pack()
+
+            for folder in self.folders:
+                self.list_folder_box.insert(END, folder[1])
+
+            Button(folder_choose, text="OK", command=self.alter_file_folder).pack()
+
+        else:
+            Label(folder_choose, text="No Folder Found, please Create It!").pack()
+
+
+
+        self.item = self.treeview.identify_row(self.popup_event.y)
+        item_specs = self.treeview.item(self.item)
+
+        folder_choose.mainloop()
+
+    def create_folder(self, event):
+
+        c.execute("""
+            INSERT INTO folders(FolderName)
+                VALUES(:name);
+        """, {
+            'name': self.entry_folder_name.get()
+        })
+
+        conn.commit()
+
+        self.refresh_tree()
+        self.folder_creator.destroy()
+
+    def fill_folder(self):
+
+        c.execute("""
+            SELECT FolderName FROM folders;
+        """)
+
+        folders = c.fetchall()
+        for folder in folders:
+            self.list_folder.insert(0, folder[0])
+
+        conn.commit()
+
+    def new_folder_menu(self):
+
+        self.folder_creator = Tk()
+        self.folder_creator.geometry('550x250')
+        self.folder_creator.title('New Folder')
+        self.folder_creator.iconbitmap('.\\gui\\icon\\telebase.ico')
+
+        Label(self.folder_creator, text='Folder Name : ').grid(row=0, column=0)
+
+        self.entry_folder_name = Entry(self.folder_creator)
+        self.entry_folder_name.grid(row=0, column=1)
+        self.entry_folder_name.bind('<Return>', self.create_folder)
+
+        Button(self.folder_creator, text='OK', command=lambda: self.create_folder(None), width=31
+               ).grid(row=1, column=0, padx=10, columnspan=2, sticky=S)
+
+        self.subfolder_panel = LabelFrame(self.folder_creator, text='SubFolder View', padx=5)
+        self.subfolder_panel.grid(row=0, column=2, rowspan=4)
+
+        xscrollbar = Scrollbar(self.subfolder_panel, orient=HORIZONTAL)
+        xscrollbar.pack(side=BOTTOM, fill=X)
+
+        self.list_folder = Listbox(self.subfolder_panel, width=45)
+        self.list_folder.pack()
+
+        xscrollbar.config(command=self.list_folder.xview)
+        self.list_folder.config(xscrollcommand=xscrollbar.set)
+
+        self.fill_folder()
+
+        self.folder_creator.mainloop()
+
     def show_info(self):
         c.execute("""
-                            SELECT * FROM files WHERE TelegramID=:id;
-                        """, {
+            SELECT FileName, TelegramID, UploadTime, TelegramLink, FileDimension, FileType FROM files
+                WHERE TelegramID=:id;
+            """, {
             'id': self.treeview.item(self.item)['text']
         })
 
@@ -323,11 +488,21 @@ class ShowWindow(Tk):
         conn.commit()
 
     def popup(self, event):
+        self.popup_event = event
         self.item = self.treeview.identify_row(event.y)  # Get Item from Treeview
-        self.treeview.selection_set(self.item)  # Color the row of Mouse DX Pressed
+        item_specs = self.treeview.item(self.item)
 
-        if event.y > 24:
-            self.popup_dx.post(event.x_root, event.y_root)
+        if item_specs['text'] != 'Folder':
+            self.treeview.selection_set(self.item)  # Color the row of Mouse DX Pressed
+
+            # Open Popup only in TreeChild
+            if item_specs['text']:
+                self.popup_dx.post(event.x_root, event.y_root)
+            else:
+                self.popup_limited.post(event.x_root, event.y_root)
+        else:
+            self.treeview.selection_set(self.item)  # Color the row of Mouse DX Pressed
+            self.folder_panel_limited.post(event.x_root, event.y_root)
 
     def delete(self):
         selected = self.treeview.selection()
@@ -368,25 +543,57 @@ class ShowWindow(Tk):
 
     def refresh_tree(self):
 
+        # Deleting all from treeview
+        c.execute("""
+            SELECT FolderID FROM folders;
+        """)
+        conn.commit()
+
+        try:
+            for row in c.fetchall():
+                self.treeview.delete(
+                    self.treeview.item(
+                        self.treeview.identify_row(
+                            self.treeview.index(int(row[0])-1) * 20 + 26)))
+        except TclError:
+            pass
+
         for child in self.treeview.get_children():
             self.treeview.delete(child)
 
+        # Folder Insert
         c.execute("""
-            SELECT TelegramID, FileName, FileDimension FROM files;
-        """)
+                SELECT * FROM folders;
+            """)
 
         conn.commit()
 
         for row in c.fetchall():
+            print('Folder Row : ' + str(row))
+            self.treeview.insert('', END, row[0], text='Folder', values=(row[1],))
 
+        # File Insert
+        c.execute("""
+                SELECT TelegramID, FileName, FileDimension, FolderID FROM files;
+            """)
+
+        conn.commit()
+
+        for row in c.fetchall():
+            print(row)
             size = self.calculate_file_size(int(row[2]))
-            self.treeview.insert('', 0, text=row[0], values=(row[1], size))
+
+            if row[3]:
+                self.treeview.insert(row[3], END, text=row[0], values=(row[1], size))
+            else:
+                self.treeview.insert('', END, text=row[0], values=(row[1], size))
 
     def download(self, event):
         item = self.treeview.item(self.treeview.selection())
 
-        downloader = DownloaderThread(self, self.app, self.chat_id, [item])
-        downloader.start()
+        if item['text'] != 'Folder':
+            downloader = DownloaderThread(self, self.app, self.chat_id, [item])
+            downloader.start()
 
     def multi_download(self):
 

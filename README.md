@@ -69,6 +69,7 @@ chat = 'Public or Private Channel ID'
 - :pushpin: File Status : Added a Counter of File Uploaded or Download; Added how much byte you uploaded or downloaded
 - :pushpin: Added File Size on Showing Panel
 - :pushpin: Added File Type on Database, it can showed by clicking on a file with right mouse
+- :pushpin: Added One Level Folder Separation (Many Bugs to Resolve)
 
 ## :closed_book: To Dos
 
@@ -76,4 +77,6 @@ chat = 'Public or Private Channel ID'
 - :pushpin: Improve Showing Window Interface
 - :pushpin: Add a Option Panel
 - :pushpin: Permit to Upload File over 1.5 GB, by **splitting** them
-- :pushpin: Add Folder Separation
+- :pushpin: Delete a folder with all the files into (now only delete empty folders) :face_with_thermometer:
+- :pushpin: Move a file out of a folder​ 
+- :pushpin: Move files (many file) into a folder
